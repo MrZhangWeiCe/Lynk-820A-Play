@@ -35,7 +35,7 @@
     <string name="clipboard_usage_access">وصول استخدام DiPlay</string>
     <string name="report_clip_label">تقرير التشخيص</string>
     <string name="share_diagnostic_report">مشاركة تقرير التشخيص</string>
-    <string name="setup_error_auth">تعذّر تحميل مصادقة CarPlay. ثبّت نسخة DiPlay الكاملة فوق هذا التطبيق. لا حاجة لإلغاء التثبيت أو تغيير إعدادات نقطة الاتصال.</string>
+    <string name="setup_error_auth">تعذّر تحميل مصادقة CarPlay. ثبّت نسخة LynkPlay الكاملة فوق هذا التطبيق. لا حاجة لإلغاء التثبيت أو تغيير إعدادات نقطة الاتصال.</string>
     <string name="hotspot_state_stopped">متوقفة</string>
     <string name="hotspot_state_off">مُغلقة</string>
     <string name="hotspot_wireless_prefix">نقطة اتصال لاسلكية:\u0020</string>

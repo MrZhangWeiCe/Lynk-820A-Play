@@ -43,6 +43,22 @@ class CarPlayMediaCallbackTest {
         assertEquals(List(3) { CarPlayMediaButton.PLAY_PAUSE }, sent)
     }
 
+    @Test
+    fun standardLynkWheelSongKeysAreHandled() {
+        press(KeyEvent.KEYCODE_MEDIA_PREVIOUS)
+        press(KeyEvent.KEYCODE_MEDIA_NEXT)
+        press(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE)
+
+        assertEquals(
+            listOf(
+                CarPlayMediaButton.PREVIOUS,
+                CarPlayMediaButton.NEXT,
+                CarPlayMediaButton.PLAY_PAUSE,
+            ),
+            sent,
+        )
+    }
+
     @Test fun experimentalPlayPauseKeyNeedsOptInAndStopsAfterDisable() {
         var enabled = false
         val experimental = CarPlayMediaCallback(experimentalDiLink3Keys = { enabled }) { index, _ -> sent += index }

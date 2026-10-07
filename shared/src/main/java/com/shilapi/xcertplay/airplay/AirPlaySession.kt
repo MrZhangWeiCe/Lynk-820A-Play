@@ -761,9 +761,11 @@ class AirPlaySession(
         }
         val types = teardownStreamTypes(decodedBody)
 
+        // Keep a payload-free line in exported diagnostics. The detailed line is intentionally
+        // redacted because it can contain protocol data.
         debugLog(
             "airplay TEARDOWN types=${types ?: "all"} activeBefore=$activeStreams " +
-                "body=${request.body.size} bytes payload=$decodedBody",
+                "bodyBytes=${request.body.size}",
         )
         trace("airplay TEARDOWN raw${request.body.size}Hex=${request.body.toHex()}")
 

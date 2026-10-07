@@ -1,4 +1,17 @@
-# DiPlay
+# LynkPlay — 领克 01 全球版 820A 适配
+
+本仓库是基于 DiPlay 0.2.13 的车型适配分支，目标为 **领克 01 全球版、820A 车机、Android 9（API 28）**。应用及 iPhone CarPlay 接收端名称为 `LynkPlay`，CarPlay 内返回车机的按钮名称为 `Lynk`，图标为领克标识。
+
+已实车确认：能够连接 CarPlay；关闭手机蓝牙后，再播放一次车机原生音乐，可正常播放 CarPlay 音乐。开启原生蓝牙连接时存在反复暂停问题。最新代码增加定向蓝牙隔离与播放器音频焦点申请，**这两项仍需实车复测，不能视为已经彻底解决**。其他领克车型、国内版及其他固件不在已验证范围内。
+
+- [车型、修改说明、排查记录与测试步骤](docs/LYNK-820A-ADAPTATION.md)
+- [本仓库发布与 APK](https://github.com/MrZhangWeiCe/Lynk-820A-Play/releases)
+
+保留原应用 ID `com.shihab.diplay`，属于替换安装，不可与相同应用 ID 的 DiPlay 同时安装。修改接收端名称不保证 iPhone 将其识别为另一辆独立车辆；身份与配对隔离尚未实车验证。
+
+以下保留上游说明、来源及许可。上游 BYD 支持范围不代表本分支已验证的领克兼容性。
+
+## 上游 DiPlay 说明
 
 **CarPlay for compatible BYD Android head units.** Wired and wireless, with the familiar DiAuto interface. Independent app: `com.shihab.diplay`.
 

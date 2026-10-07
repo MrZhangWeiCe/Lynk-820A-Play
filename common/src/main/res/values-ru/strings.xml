@@ -35,7 +35,7 @@
     <string name="clipboard_usage_access">Доступ к использованию DiPlay</string>
     <string name="report_clip_label">Диагностический отчёт</string>
     <string name="share_diagnostic_report">Поделиться диагностическим отчётом</string>
-    <string name="setup_error_auth">Не удалось загрузить аутентификацию CarPlay. Установите полную сборку DiPlay поверх этого приложения. Удалять приложение и менять настройки точки доступа не требуется.</string>
+    <string name="setup_error_auth">Не удалось загрузить аутентификацию CarPlay. Установите полную сборку LynkPlay поверх этого приложения. Удалять приложение и менять настройки точки доступа не требуется.</string>
     <string name="hotspot_state_stopped">остановлена</string>
     <string name="hotspot_state_off">выключена</string>
     <string name="hotspot_wireless_prefix">Беспроводная точка доступа:\u0020</string>

@@ -163,6 +163,8 @@ class CarPlayController(
     private val clearPairRecord: () -> Unit = {},
     private val locationProvider: Iap2LocationProvider? = null,
     private val vehicleStatusProvider: com.shilapi.xcertplay.transport.VehicleStatusProvider? = null,
+    private val openHeadUnitHomeOnRequest: Boolean = true,
+    private val isolateNativeBluetoothAudio: Boolean = false,
 ) : Closeable {
     init {
         require(!config.locationReportingEnabled || locationProvider != null) {
@@ -262,6 +264,8 @@ class CarPlayController(
     @Volatile private var vpnBound = false
     private val wirelessHandoffRequested = AtomicBoolean(false)
     private val wirelessTunnelReady = AtomicBoolean(false)
+    private var wirelessBluetoothTarget: BluetoothDevice? = null
+    private var nativeBluetoothIsolation: NativeBluetoothAudioIsolation? = null
     private val wirelessActiveReported = AtomicBoolean(false)
     private val wirelessGeneration = AtomicInteger(0)
     private val wirelessConnectionProof = WirelessConnectionProof<AirPlaySession>()
@@ -339,13 +343,17 @@ class CarPlayController(
         // The user tapped the car icon in CarPlay: show the head unit's own menu, like its Home button.
         // The session keeps running in the background, so returning to DiPlay resumes CarPlay.
         override fun onHostUiRequested(session: AirPlaySession) {
-            debugLog("CarPlay requested the car UI; opening the head-unit home screen")
-            runCatching {
-                appContext.startActivity(
-                    Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-                )
-            }.onFailure { debugLog("Car home screen could not open: ${it.javaClass.simpleName}") }
+            if (openHeadUnitHomeOnRequest) {
+                debugLog("CarPlay requested the car UI; opening the head-unit home screen")
+                runCatching {
+                    appContext.startActivity(
+                        Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                    )
+                }.onFailure { debugLog("Car home screen could not open: ${it.javaClass.simpleName}") }
+            } else {
+                debugLog("CarPlay requested the car UI; keeping projection in front for this head unit")
+            }
             uiListener?.onHostUiRequested(session)
         }
 
@@ -576,12 +584,19 @@ class CarPlayController(
         if (closed) return false
         val session = activeSession ?: return false
         return try {
-            touchExecutor.execute { session.sendMedia(index) }
+            debugLog("Media HID queued index=$index")
+            touchExecutor.execute {
+                session.sendMedia(index)
+                debugLog("Media HID dispatch completed index=$index")
+            }
             true
         } catch (_: Exception) {
             false
         }
     }
+
+    /** Metadata-only input diagnostics, retained by the session's exported log. */
+    fun reportMediaKeyDiagnostic(message: String) = debugLog("Media input: $message")
 
     override fun close() {
         synchronized(this) {
@@ -743,6 +758,10 @@ class CarPlayController(
             val previousPlaying = playbackStatus.playing
             playbackStatus.acceptUpdate(frame)?.let { it to (it.playing != previousPlaying) }
         }?.let { (update, playingChanged) ->
+            if (playingChanged) {
+                debugLog("iAP playback state playing=${update.playing}")
+                logBluetoothAudioProfiles()
+            }
             nowPlayingListener?.invoke(update)
             if (playingChanged) playbackListener?.invoke(update.playing)
         }
@@ -751,6 +770,19 @@ class CarPlayController(
     private fun onArtworkTransfer(transfer: com.shilapi.xcertplay.transport.Iap2ArtworkTransfer) {
         debugLog("iap2 artwork transfer id=0x${transfer.id.toString(16)} bytes=${transfer.bytes.size}")
         artworkListener?.invoke(transfer.id, transfer.bytes)
+    }
+
+    private fun logBluetoothAudioProfiles() {
+        // Android car firmware commonly uses A2DP_SINK (11) and HEADSET_CLIENT (16), not
+        // phone-side A2DP (2) and HEADSET (1). Read only; never disconnect a paired device.
+        val adapter = bluetoothAdapter ?: return
+        fun state(profile: Int): String = runCatching {
+            adapter.getProfileConnectionState(profile).toString()
+        }.getOrElse { "unavailable" }
+        debugLog(
+            "Bluetooth audio profiles headset=${state(1)} a2dp=${state(2)} " +
+                "a2dpSink=${state(11)} headsetClient=${state(16)}",
+        )
     }
 
     private fun startMfi() {
@@ -1211,6 +1243,10 @@ class CarPlayController(
                 ?: throw IOException("Bluetooth adapter is unavailable")
             if (!adapter.isEnabled) throw IOException("Bluetooth is not enabled")
             val device = selectWirelessBluetoothDevice(adapter)
+            synchronized(wirelessResourceLock) {
+                if (isStaleWirelessRun(generation)) return
+                wirelessBluetoothTarget = device
+            }
             val hostBluetoothMac = accessoryBluetoothMac(adapter)
             debugLog(
                 "wireless selected Bluetooth target name=${device.name ?: "unknown"} " +
@@ -1604,6 +1640,18 @@ class CarPlayController(
                 }
                 debugLog("wireless handoff ready; closing Bluetooth bootstrap transport")
                 closeBluetoothBootstrapTransport()
+                synchronized(wirelessResourceLock) {
+                    if (!isStaleWirelessRun(generation) && isolateNativeBluetoothAudio &&
+                        Build.VERSION.SDK_INT == Build.VERSION_CODES.P) {
+                        val adapter = bluetoothAdapter
+                        val target = wirelessBluetoothTarget
+                        if (adapter != null && target != null) {
+                            nativeBluetoothIsolation = NativeBluetoothAudioIsolation(
+                                appContext, adapter, target, ::debugLog,
+                            ).also { it.start() }
+                        }
+                    }
+                }
                 onStatus(CarPlayStatus.WirelessActive)
             },
             "xcertplay-wireless-handoff",
@@ -2275,6 +2323,9 @@ class CarPlayController(
             wirelessDiagnostics = null
             diagnostics?.close()
             wirelessConnectionProof.clear()
+            nativeBluetoothIsolation?.close()
+            nativeBluetoothIsolation = null
+            wirelessBluetoothTarget = null
             media.setIapTunnelHandler(null)
             val activeTunnel = wirelessTunnelChannel
             wirelessTunnelChannel = null

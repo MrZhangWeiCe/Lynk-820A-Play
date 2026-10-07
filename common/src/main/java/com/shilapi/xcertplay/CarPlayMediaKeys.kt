@@ -56,6 +56,7 @@ internal object CarPlayMediaKeys {
     private var focusHeld = false
     private var appContext: Context? = null
     private var mediaAudioActive = false
+    private var requestAudioFocus = true
     private var nowPlaying = CarPlayNowPlaying()
     private var elapsedUpdatedAt = 0L
     private var artwork: Bitmap? = null
@@ -69,6 +70,9 @@ internal object CarPlayMediaKeys {
             artworkOwner = artworkQueue.newSession()
         }
         appContext = context.applicationContext
+        // On 820A let the renderer own source activation, without a second focus request
+        // from this auxiliary media-key session. Keep the session active for wheel keys.
+        requestAudioFocus = !Lynk820AProfile.matches()
         controller = next
         next.playbackListener = { playing -> onIphonePlaying(next, playing) }
         next.nowPlayingListener = { update -> onNowPlayingChanged(next, update) }
@@ -168,27 +172,39 @@ internal object CarPlayMediaKeys {
         val owner = Any().also { focusOwner = it }
         focusEventRevision = 0L
         val audio = context.getSystemService(AudioManager::class.java)
-        val request = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-            .setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                    .build(),
-            )
-            .setOnAudioFocusChangeListener({ change ->
-                onFocusChanged(expectedController, owner, change)
-            }, mainHandler)
-            .build()
-        val granted = audio?.requestAudioFocus(request) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+        val request = if (requestAudioFocus) {
+            AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                .setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .build(),
+                )
+                .setOnAudioFocusChangeListener({ change ->
+                    onFocusChanged(expectedController, owner, change)
+                }, mainHandler)
+                .build()
+        } else null
+        val granted = request != null &&
+            audio?.requestAudioFocus(request) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
         focusRequest = request
         focusHeld = granted
         if (granted) forwardGrantedFocusLocked()
         session = MediaSession(context, "DiPlay CarPlay").apply {
+            // Android 9/OEM media dispatchers still consult these legacy capability flags before
+            // routing steering-wheel keys to an active session.
+            setFlags(
+                MediaSession.FLAG_HANDLES_MEDIA_BUTTONS or
+                    MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS,
+            )
             setCallback(callback, mainHandler)
             setMetadata(androidMetadata(nowPlaying, shownArtworkLocked()))
             isActive = true
         }
-        Log.i(TAG, "media keys active focusGranted=$granted")
+        Log.i(TAG, "media keys active focusRequested=${request != null} focusGranted=$granted")
+        expectedController.reportMediaKeyDiagnostic(
+            "session active focusRequested=${request != null} focusGranted=$granted",
+        )
     }
 
     private fun forwardGrantedFocusLocked() {
@@ -262,13 +278,17 @@ internal object CarPlayMediaKeys {
     }
 
     private fun send(index: Int, source: String) {
+        val target = synchronized(this) { controller }
+        val caller = runCatching { session?.currentControllerInfo?.packageName }
+            .getOrNull() ?: "unknown"
+        target?.reportMediaKeyDiagnostic("source=$source index=$index caller=$caller")
         // While the car's video player is on screen the wheel drives it: a CarPlay play/pause would
         // make the iPhone end the video session.
         if (CarPlayVideo.onMediaKey(index)) {
             Log.i(TAG, "media key $source -> car video player $index")
             return
         }
-        val sent = synchronized(this) { controller }?.sendMediaButton(index) ?: false
+        val sent = target?.sendMediaButton(index) ?: false
         Log.i(TAG, "media key $source -> CarPlay $index sent=$sent")
     }
 
@@ -276,6 +296,18 @@ internal object CarPlayMediaKeys {
         experimentalDiLink3Keys = { appContext?.let(BydOutputSettings::carPlayCallControls) == true },
         send = ::send,
     )
+
+    /**
+     * Fallback for API 28 head units that send a steering-wheel media key to the foreground
+     * activity instead of Android's active media session.
+     */
+    @Synchronized
+    fun dispatchForegroundKey(event: KeyEvent): Boolean {
+        if (controller == null || CarPlayMediaButton.forKeyCode(event.keyCode) == null) return false
+        return callback.onMediaButtonEvent(
+            Intent(Intent.ACTION_MEDIA_BUTTON).putExtra(Intent.EXTRA_KEY_EVENT, event),
+        )
+    }
 
     /** Whether [next] changes what the media session's metadata shows; position and play state do not. */
     internal fun metadataChanged(previous: CarPlayNowPlaying, next: CarPlayNowPlaying): Boolean =

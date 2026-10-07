@@ -34,7 +34,7 @@
     <string name="clipboard_usage_access">DiPlay 使用狀況存取權限</string>
     <string name="report_clip_label">診斷報告</string>
     <string name="share_diagnostic_report">分享診斷報告</string>
-    <string name="setup_error_auth">無法載入 CarPlay 認證。請在此 App 上覆蓋安裝完整的 DiPlay 建置版本。無需解除安裝或變更熱點設定。</string>
+    <string name="setup_error_auth">無法載入 CarPlay 認證。請在此 App 上覆蓋安裝包含認證檔案的 LynkPlay 完整版。無需解除安裝或變更熱點設定。</string>
     <string name="hotspot_state_stopped">已停止</string>
     <string name="hotspot_state_off">已關閉</string>
     <string name="hotspot_wireless_prefix">無線熱點：</string>
@@ -101,7 +101,7 @@
     <string name="allow_the_connection_permission_to_continue">請授予連線權限以繼續</string>
     <string name="an_independent_carplay_receiver_for_android_head_units_wir">專為 Android 車機打造的獨立 CarPlay 接收器。有線和無線連線均在車機上執行，並使用本機認證。一般 iPhone 無需越獄、Mac、轉接器或登入即可連線。\n\n此預覽版本使用實驗性配件識別資訊，目前仍在測試與不同 iPhone 和車機的相容性。本產品未經 Apple 認證。</string>
     <string name="android_9_compatibility">Android 9 相容性</string>
-    <string name="app_name">DiPlay</string>
+    <string name="app_name">LynkPlay</string>
     <string name="app_permissions">App 權限</string>
     <string name="app_settings">App 設定</string>
     <string name="apply_and_reconnect">套用並重新連線</string>
@@ -183,7 +183,7 @@
     <string name="default_placeholder_icon">預設預留位置圖示</string>
     <string name="diagnostic_report_saved">診斷報告已儲存</string>
     <string name="diagnostics">診斷</string>
-    <string name="diplay">DiPlay</string>
+    <string name="diplay">LynkPlay</string>
     <string name="discard_changes_and_exit_settings">放棄變更並離開設定</string>
     <string name="disconnect">中斷連線</string>
     <string name="discovering_iphone">正在尋找 iPhone</string>

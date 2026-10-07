@@ -35,7 +35,7 @@
     <string name="clipboard_usage_access">Acceso al uso de DiPlay</string>
     <string name="report_clip_label">Informe de diagnóstico</string>
     <string name="share_diagnostic_report">Compartir informe de diagnóstico</string>
-    <string name="setup_error_auth">No se pudo cargar la autenticación de CarPlay. Instala la compilación completa de DiPlay sobre esta aplicación. No es necesario desinstalar ni cambiar la configuración del punto de acceso.</string>
+    <string name="setup_error_auth">No se pudo cargar la autenticación de CarPlay. Instala la compilación completa de LynkPlay sobre esta aplicación. No es necesario desinstalar ni cambiar la configuración del punto de acceso.</string>
     <string name="hotspot_state_stopped">detenido</string>
     <string name="hotspot_state_off">apagado</string>
     <string name="hotspot_wireless_prefix">Punto de acceso inalámbrico:\u0020</string>

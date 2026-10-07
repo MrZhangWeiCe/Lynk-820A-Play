@@ -9,6 +9,9 @@ import java.security.MessageDigest
 
 /** Installs the private beta's experimental identity. It has no remote fallback. */
 internal object DiPlayBootstrap {
+    /** Name advertised to iPhones in the CarPlay/AirPlay receiver identity. */
+    const val CARPLAY_DEVICE_NAME = "LynkPlay"
+
     @Volatile private var ready = false
 
     @Synchronized fun ensure(context: Context, mfiTarget: MfiTarget) {
