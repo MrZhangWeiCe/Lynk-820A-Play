@@ -6,6 +6,7 @@
 
 - [车型、修改说明、排查记录与测试步骤](docs/LYNK-820A-ADAPTATION.md)
 - [本仓库发布与 APK](https://github.com/MrZhangWeiCe/Lynk-820A-Play/releases)
+- [1.0.0-820A 发布说明（release 构建，沿用测试签名）](docs/RELEASE-NOTES-LYNKPLAY-1.0.0-820A.md)
 
 保留原应用 ID `com.shihab.diplay`，属于替换安装，不可与相同应用 ID 的 DiPlay 同时安装。修改接收端名称不保证 iPhone 将其识别为另一辆独立车辆；身份与配对隔离尚未实车验证。
 
